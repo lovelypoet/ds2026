@@ -11,4 +11,5 @@ Student Info
 
 * Student Name: Nguyen Duc Anh
 * Student ID: 23BI14013
-* Student Group ID: Not-for-now
+* Student Group ID: 23BI14013
+

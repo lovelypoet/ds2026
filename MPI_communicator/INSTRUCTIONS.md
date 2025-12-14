@@ -48,10 +48,36 @@ mpiexec -n 3 python -m MPI_communicator.main
     - Type `/quit` to leave.
 
 ## 4. Multi-Machine Setup
-To run across multiple computers:
-1. Install MS-MPI on all machines.
-2. Ensure source code is identical on all machines.
-3. Run:
-   ```powershell
-   mpiexec -hosts 2 <IP_A> <IP_B> -n 2 python -m MPI_communicator.main
-   ```
+To run across multiple computers (e.g., Laptop A and Laptop B):
+
+### 1. Verification (On ALL machines)
+*   Install **MS-MPI** (SDK + Runtime).
+*   Ensure the project folder is at the **exact same path** (e.g., `C:\ds2026_gp`).
+*   Allow `python.exe`, `smpd.exe`, and `mpiexec.exe` through **Windows Firewall**.
+
+### 2. Start Service (On ALL machines)
+Run this in a separate terminal to listen for connections:
+```powershell
+smpd -d
+# What: Starts the MPI background listener.
+# Why: Required for machines to talk to each other.
+```
+
+### 3. Run the App (From the "Controller" machine)
+The "Controller" is simply the machine where you type the `mpiexec` command. It can be the server or an unrelated node.
+
+**Example: 3 Distinct Machines**
+*   **Machine 1 (Server)**: `192.168.1.10`
+*   **Machine 2 (Client A)**: `192.168.1.11`
+*   **Machine 3 (Client B)**: `192.168.1.12`
+
+Run this on Machine 1:
+```powershell
+mpiexec -hosts 3 192.168.1.10 192.168.1.11 192.168.1.12 -n 3 cmd /c start "MPI Chat" python -m MPI_communicator.main
+```
+**Explanation**:
+*   `-hosts 3`: We are using 3 separate IPs.
+*   The **first IP** becomes Rank 0 (Server).
+*   The **second IP** becomes Rank 1 (Client A).
+*   The **third IP** becomes Rank 2 (Client B).
+*   `-n 3`: We are launching 3 processes total (one per IP).

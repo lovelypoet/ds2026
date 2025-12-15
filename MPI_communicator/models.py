@@ -1,4 +1,16 @@
-from typing import TypedDict, NotRequired, Any, List, Union
+from typing import TypedDict, Any, List, Union
+
+try:
+    from typing import NotRequired
+except ImportError:
+    try:
+        from typing_extensions import NotRequired
+    except ImportError:
+        # Fallback for Python < 3.11 without typing_extensions
+        class _NotRequired:
+            def __getitem__(self, item):
+                return item
+        NotRequired = _NotRequired()
 from datetime import datetime
 from enum import Enum
 

@@ -13,7 +13,14 @@ winget install -e --id Microsoft.msmpisdk
 
 ### Install Python Dependencies
 ```bash
+# Windows
 pip install mpi4py
+
+# Linux (Debian/Ubuntu)
+sudo apt update
+sudo apt install openmpi-bin python3-mpi4py python3-tk
+# Note: 'python3-tk' might be needed if using strict UI libraries, 
+# but for this CLI app, just openmpi + mpi4py is sufficient.
 ```
 
 ## 2. How to Run

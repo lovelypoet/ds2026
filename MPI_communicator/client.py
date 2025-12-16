@@ -131,10 +131,7 @@ class ChatClient:
             file_size = transfer_info['filesize']
             
             dest_rank = to_rank if use_p2p else 0
-            tag_meta = 2   # TAG_FILE_META (Still needed for legacy/setup or just skipped?)
-            # Actually, we can skip META if the receiver already has it from REQ, 
-            # BUT the receiver logic (handle_incoming) currently expects META + CHUNKS.
-            # To be safe and compatible with existing receive logic, we send META then CHUNKS.
+            tag_meta = 2
             
             tag_chunk = 3 
             mode_str = "P2P" if use_p2p else "Server Relay"
@@ -289,11 +286,6 @@ class ChatClient:
                         if rank in self.pending_offers:
                             meta = self.pending_offers.pop(rank)
                             ack_msg = {'file_id': meta['file_id']}
-                            # ACK goes back to sender. Logic: Sender sent REQ via (P2P or Server).
-                            # We can reply via Server (SAFE) or P2P. Let's reply via Server to be safe,
-                            # OR just reply to 'from_rank' via Server.
-                            # Actually, simplest is send to Rank 0 routed to target, or direct if we prefer.
-                            # Let's use Server Relay for Control Signals (Reliable).
                             ack_msg['to_user'] = meta['from_user'] # Needed for Server routing
                             self.transport.send(ack_msg, 0, 5) # TAG_FILE_ACK
                             self._safe_print(f"Accepted file from Rank {rank}.")

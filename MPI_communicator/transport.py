@@ -6,8 +6,11 @@ import time
 TAG_MSG = 1
 TAG_FILE_META = 2
 TAG_FILE_CHUNK = 3
-TAG_CMD = 4
-TAG_CHECK = 5
+TAG_FILE_REQ = 4
+TAG_FILE_ACK = 5
+TAG_FILE_DENY = 6
+TAG_CMD = 7
+TAG_CHECK = 8
 
 class MPITransport:
     def __init__(self, comm=MPI.COMM_WORLD):

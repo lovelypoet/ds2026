@@ -1,5 +1,5 @@
 import time
-from .transport import MPITransport, TAG_MSG, TAG_CMD, TAG_FILE_META, TAG_FILE_CHUNK
+from .transport import MPITransport, TAG_MSG, TAG_CMD, TAG_FILE_META, TAG_FILE_CHUNK, TAG_FILE_REQ, TAG_FILE_ACK, TAG_FILE_DENY
 from .models import Message, MessageType, User
 
 class Server:
@@ -27,7 +27,7 @@ class Server:
     def handle_message(self, data, source: int, tag: int):
         if tag == TAG_CMD:
             return self.handle_command(data, source)
-        elif tag == TAG_MSG or tag == TAG_FILE_META or tag == TAG_FILE_CHUNK:
+        elif tag in [TAG_MSG, TAG_FILE_META, TAG_FILE_CHUNK, TAG_FILE_REQ, TAG_FILE_ACK, TAG_FILE_DENY]:
             self.route_message(data, source, tag)
         else:
             print(f"[Server] Unknown tag {tag} from {source}")
@@ -67,6 +67,7 @@ class Server:
         if dest_id and dest_id != 'all':
             target_rank = self.get_rank_by_id(dest_id)
             if target_rank:
+                print(f"[Server] Routing tag {tag} from {source} to {target_rank}")
                 self.transport.send(msg, target_rank, tag)
             else:
                 print(f"[Server] User {dest_id} not found")

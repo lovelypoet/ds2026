@@ -54,37 +54,71 @@ mpiexec -n 3 python -m MPI_communicator.main
     - Type `/dm <rank> <message>` to whisper.
     - Type `/quit` to leave.
 
-## 4. Multi-Machine Setup
-To run across multiple computers (e.g., Laptop A and Laptop B):
+## 4. Multi-Machine Setup (Running across devices)
 
-### 1. Verification (On ALL machines)
-*   Install **MS-MPI** (SDK + Runtime).
-*   Ensure the project folder is at the **exact same path** (e.g., `C:\ds2026_gp`).
-*   Allow `python.exe`, `smpd.exe`, and `mpiexec.exe` through **Windows Firewall**.
+MPI works by having **ONE Controller Machine** launch processes on **ALL** machines remotesly. You NEVER run the python script on every machine manually.
 
-### 2. Start Service (On ALL machines)
-Run this in a separate terminal to listen for connections:
-```powershell
+### Core Concept: The "Controller" Model
+- **Controller (Rank 0)**: This is the ONLY machine where you type the command. It knows the IPs of everyone else.
+- **Workers (Rank 1, 2...)**: These machines just sit idle running a listener service. They wait for the Controller to "push" the app to them.
+
+### Prerequisites (For ALL Machines)
+1.  **Same Source Code**: The project folder `MPI_communicator` must exist at the **EXACT SAME PATH** on all machines (e.g., `C:\MPI_Chat` or `/home/user/mpi_chat`).
+2.  **Network**: All machines must be on the same LAN or VPN (able to ping each other).
+3.  **Firewall**: 
+    - **Windows**: Allow `mpiexec`, `smpd`, `python`.
+    - **Linux**: Allow `ssh` (Port 22).
+
+---
+
+### Scenario A: Windows Cluster (e.g., 3 Laptops)
+Windows uses the **SMPD** service to listen for connections.
+
+**Step 1: Start Listener (On Machine 1, 2, and 3)**
+Open CMD as Admin and run:
+```cmd
 smpd -d
-# What: Starts the MPI background listener.
-# Why: Required for machines to talk to each other.
 ```
+*(Leave this running. It waits for commands).*
 
-### 3. Run the App (From the "Controller" machine)
-The "Controller" is simply the machine where you type the `mpiexec` command. It can be the server or an unrelated node.
-
-**Example: 3 Distinct Machines**
-*   **Machine 1 (Server)**: `192.168.1.10`
-*   **Machine 2 (Client A)**: `192.168.1.11`
-*   **Machine 3 (Client B)**: `192.168.1.12`
-
-Run this on Machine 1:
-```powershell
+**Step 2: Launch App (On Machine 1 ONLY)**
+Assuming IPs: `192.168.1.10` (M1), `192.168.1.11` (M2), `192.168.1.12` (M3).
+```cmd
 mpiexec -hosts 3 192.168.1.10 192.168.1.11 192.168.1.12 -n 3 cmd /c start "MPI Chat" python -m MPI_communicator.main
 ```
-**Explanation**:
-*   `-hosts 3`: We are using 3 separate IPs.
-*   The **first IP** becomes Rank 0 (Server).
-*   The **second IP** becomes Rank 1 (Client A).
-*   The **third IP** becomes Rank 2 (Client B).
-*   `-n 3`: We are launching 3 processes total (one per IP).
+*   **Machine 1** becomes Rank 0 (Server).
+*   **Machine 2** becomes Rank 1.
+*   **Machine 3** becomes Rank 2.
+
+---
+
+### Scenario B: Linux Cluster (e.g., 3 VMs / Ubuntu)
+Linux uses **SSH** instead of SMPD.
+
+**Step 1: Setup SSH (On All Machines)**
+Install SSH Server:
+```bash
+sudo apt install openssh-server -y
+sudo service ssh start
+```
+
+**Step 2: Password-less Access (On Controller Only)**
+The Controller must be able to SSH into others without a password.
+```bash
+# On Controller (Machine 1)
+ssh-keygen -t rsa  # Press Enter for all
+ssh-copy-id user@192.168.1.11
+ssh-copy-id user@192.168.1.12
+```
+
+**Step 3: Launch App (On Controller Only)**
+```bash
+mpiexec -host 192.168.1.10,192.168.1.11,192.168.1.12 -n 3 xterm -e python3 -m MPI_communicator.main
+```
+
+---
+
+### Scenario C: Mixed OS (Windows + Linux)
+**Not Recommended directly.**
+MPI protocols on Windows and Linux are often incompatible.
+*   **Best Fix**: Use **WSL** on your Windows machine. Install `openmpi-bin` inside WSL. Now treat it exactly like **Scenario B (Linux Cluster)**.
